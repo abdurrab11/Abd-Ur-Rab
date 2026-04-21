@@ -13,7 +13,7 @@
     
     A.R.T.H - Abd Ur Rab's Technological Hub
     The Greatest A1 First-Class Supreme Toolkit
-    Version: 3.0 Divine Edition
+    Version: 3.1 Divine Edition [FIXED]
     Author: Abd Ur Rab
 """
 
@@ -26,7 +26,6 @@ import subprocess
 import threading
 import json
 import re
-import math
 from datetime import datetime
 from collections import deque
 import requests
@@ -109,7 +108,7 @@ class ARTHDivineToolkit:
     def __init__(self):
         self.C = DivineColors()
         self.author = "Abd Ur Rab"
-        self.version = "3.0 Divine Edition"
+        self.version = "3.1 Divine Edition [FIXED]"
         self.running = True
         self.data_history = deque(maxlen=100)
         self.animation_chars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
@@ -127,7 +126,10 @@ class ARTHDivineToolkit:
     def center_text(self, text, width=None, fill=' '):
         if width is None:
             width = self.get_terminal_width()
-        return text.center(width, fill)
+        # Handle ANSI codes in length calculation
+        visible_len = len(re.sub(r'\033\[[0-9;]*m', '', text))
+        padding = (width - visible_len) // 2
+        return ' ' * padding + text + ' ' * (width - visible_len - padding)
         
     def print_line(self, char="═", color=None):
         color = color or self.C.GOLD
@@ -163,9 +165,9 @@ class ARTHDivineToolkit:
         print(f"{self.C.GOLD}{self.C.BOLD}╔{'═' * (width-2)}╗{self.C.END}")
         
         # Bismillah header
-        bismillah_line = "  ﷽  بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ  ﷽  "
-        padding = (width - len("  ﷽  بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ  ﷽  ")) // 2
-        print(f"{self.C.GOLD}║{' ' * padding}{self.C.CYAN}{self.C.BOLD}{bismillah_line}{self.C.END}{self.C.GOLD}{' ' * (width - padding - len(bismillah_line) - 2)}║{self.C.END}")
+        bismillah_text = "  ﷽  بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ  ﷽  "
+        centered = self.center_text(f"{self.C.CYAN}{self.C.BOLD}{bismillah_text}{self.C.END}", width)
+        print(f"{self.C.GOLD}║{centered[len(self.C.GOLD):]}{self.C.GOLD}║{self.C.END}")
         
         print(f"{self.C.GOLD}{self.C.BOLD}╠{'═' * (width-2)}╣{self.C.END}")
         
@@ -188,13 +190,17 @@ class ARTHDivineToolkit:
         title = "  A.R.T.H - ABD UR RAB'S TECHNOLOGICAL HUB  "
         subtitle = "  THE GREATEST A1 FIRST-CLASS SUPREME TOOLKIT  "
         
-        print(f"{self.C.GOLD}║{' ' * ((width - len(title)) // 2)}{self.C.CRIMSON}{self.C.BOLD}{self.C.BLINK}{title}{self.C.END}{self.C.GOLD}{' ' * ((width - len(title)) // 2 - 1)}║{self.C.END}")
-        print(f"{self.C.GOLD}║{' ' * ((width - len(subtitle)) // 2)}{self.C.PURPLE}{self.C.BOLD}{subtitle}{self.C.END}{self.C.GOLD}{' ' * ((width - len(subtitle)) // 2 - 1)}║{self.C.END}")
+        title_centered = self.center_text(f"{self.C.CRIMSON}{self.C.BOLD}{self.C.BLINK}{title}{self.C.END}", width)
+        subtitle_centered = self.center_text(f"{self.C.PURPLE}{self.C.BOLD}{subtitle}{self.C.END}", width)
+        
+        print(f"{self.C.GOLD}║{title_centered[len(self.C.GOLD):]}{self.C.GOLD}║{self.C.END}")
+        print(f"{self.C.GOLD}║{subtitle_centered[len(self.C.GOLD):]}{self.C.GOLD}║{self.C.END}")
         
         # Author info
         print(f"{self.C.GOLD}╠{'═' * (width-2)}╣{self.C.END}")
         info = f"  Author: {self.author}  |  Version: {self.version}  |  Platform: {platform.system()}  "
-        print(f"{self.C.GOLD}║{self.C.SKY}{info.center(width-2)}{self.C.GOLD}║{self.C.END}")
+        info_centered = self.center_text(f"{self.C.SKY}{info}{self.C.END}", width)
+        print(f"{self.C.GOLD}║{info_centered[len(self.C.GOLD):]}{self.C.GOLD}║{self.C.END}")
         print(f"{self.C.GOLD}╚{'═' * (width-2)}╝{self.C.END}")
         
     # ═══════════════════════════════════════════════════════════════
@@ -209,7 +215,15 @@ class ARTHDivineToolkit:
             
             status = f" ﷽  |  {date_str}  |  {self.C.GOLD}{time_str}{self.C.CYAN}  |  Hijri: {hijri}  |  {self.get_prayer_indicator()} "
             
-            sys.stdout.write(f"\r{self.C.BG_PURPLE}{self.C.WHITE}{self.C.BOLD}{status.center(self.get_terminal_width())}{self.C.END}")
+            # Build status bar with proper width handling
+            visible_status = f" ﷽  |  {date_str}  |  {time_str}  |  Hijri: {hijri}  |  {self.get_prayer_indicator()} "
+            padding = self.get_terminal_width() - len(visible_status)
+            if padding < 0:
+                padding = 0
+                
+            full_status = f" ﷽  |  {date_str}  |  {self.C.GOLD}{time_str}{self.C.CYAN}  |  Hijri: {hijri}  |  {self.get_prayer_indicator()} {' ' * padding}"
+            
+            sys.stdout.write(f"\r{self.C.BG_PURPLE}{self.C.WHITE}{self.C.BOLD}{full_status}{self.C.END}")
             sys.stdout.flush()
             time.sleep(1)
             
@@ -332,22 +346,22 @@ class ARTHDivineToolkit:
             return
             
         print(f"\n{self.C.GOLD}{self.C.BOLD}╔{'═'*58}╗{self.C.END}")
-        print(f"{self.C.GOLD}║{self.C.CENTER}  ⚡ INTERNET SPEED ANALYSIS  {self.C.GOLD}║{self.C.END}")
+        print(f"{self.C.GOLD}║{' ' * 18}{self.C.CYAN}{self.C.BOLD}⚡ INTERNET SPEED ANALYSIS{' ' * 17}{self.C.GOLD}║{self.C.END}")
         print(f"{self.C.GOLD}╠{'═'*58}╣{self.C.END}")
         
         # Download bar
         dl_color = self.C.GREEN if results['download'] > 10 else self.C.YELLOW if results['download'] > 5 else self.C.RED
         dl_bar = "█" * int(min(results['download'], 50))
-        print(f"{self.C.GOLD}║{self.C.END} {self.C.CYAN}↓ DOWNLOAD:{self.C.END} {dl_color}{results['download']:.2f} MB/s{self.C.END} {dl_bar}")
+        print(f"{self.C.GOLD}║{self.C.END} {self.C.CYAN}↓ DOWNLOAD:{self.C.END} {dl_color}{results['download']:.2f} MB/s{self.C.END} {dl_bar}{' '*(50-len(dl_bar))}{self.C.GOLD}║{self.C.END}")
         
         # Upload bar
         ul_color = self.C.GREEN if results['upload'] > 5 else self.C.YELLOW if results['upload'] > 2 else self.C.RED
         ul_bar = "█" * int(min(results['upload'] * 5, 50))
-        print(f"{self.C.GOLD}║{self.C.END} {self.C.CYAN}↑ UPLOAD:  {self.C.END} {ul_color}{results['upload']:.2f} MB/s{self.C.END} {ul_bar}")
+        print(f"{self.C.GOLD}║{self.C.END} {self.C.CYAN}↑ UPLOAD:  {self.C.END} {ul_color}{results['upload']:.2f} MB/s{self.C.END} {ul_bar}{' '*(50-len(ul_bar))}{self.C.GOLD}║{self.C.END}")
         
         # Ping
         ping_color = self.C.GREEN if results['ping'] < 50 else self.C.YELLOW if results['ping'] < 100 else self.C.RED
-        print(f"{self.C.GOLD}║{self.C.END} {self.C.CYAN}↔ PING:    {self.C.END} {ping_color}{results['ping']:.1f} ms{self.C.END}")
+        print(f"{self.C.GOLD}║{self.C.END} {self.C.CYAN}↔ PING:    {self.C.END} {ping_color}{results['ping']:.1f} ms{self.C.END}{' '*42}{self.C.GOLD}║{self.C.END}")
         
         print(f"{self.C.GOLD}╚{'═'*58}╝{self.C.END}")
         
@@ -533,29 +547,39 @@ class ARTHDivineToolkit:
             print(f"{self.C.RED}[!] WiFi scan unavailable: {e}{self.C.END}")
             
     # ═══════════════════════════════════════════════════════════════
-    # DIVINE MENU
+    # DIVINE MENU - FIXED VERSION
     # ═══════════════════════════════════════════════════════════════
     def divine_menu(self):
         width = self.get_terminal_width()
         menu_width = 70
         
         print(f"\n{self.C.GOLD}{self.C.BOLD}╔{'═'*menu_width}╗{self.C.END}")
-        print(f"{self.C.GOLD}║{' '*((menu_width-30)//2)}{self.C.CYAN}{self.C.BOLD}⚡ DIVINE OPERATIONS CENTER ⚡{' '*((menu_width-30)//2)}{self.C.GOLD}║{self.C.END}")
+        title = "⚡ DIVINE OPERATIONS CENTER ⚡"
+        title_visible = "⚡ DIVINE OPERATIONS CENTER ⚡"
+        title_padding = (menu_width - len(title_visible)) // 2
+        print(f"{self.C.GOLD}║{' ' * title_padding}{self.C.CYAN}{self.C.BOLD}{title}{self.C.END}{self.C.GOLD}{' ' * (menu_width - title_padding - len(title_visible) - 1)}║{self.C.END}")
         print(f"{self.C.GOLD}╠{'═'*menu_width}╣{self.C.END}")
         
+        # FIXED: Properly paired options (8 items = 4 rows)
         options = [
-            ("[1]", "🖥️  System Intelligence", "[5]", "📶 WiFi Analyzer"),
-            ("[2]", "🌐 Network Reconnaissance", "[6]", "🌡️  System Monitor"),
-            ("[3]", "⚡ Internet Speed Test", "[7]", "📡 Packet Tracer"),
-            ("[4]", "⚔️  Port Scanner", "[8]", "🔐 Security Audit"),
-            ("[9]", "🧹 Clear Screen", "[0]", "🚪 Exit (Alhamdulillah)")
+            ("[1]", "🖥️  System Intelligence",     "[2]", "🌐 Network Reconnaissance"),
+            ("[3]", "⚡ Internet Speed Test",       "[4]", "⚔️  Port Scanner"),
+            ("[5]", "📶 WiFi Analyzer",            "[6]", "🌡️  System Monitor"),
+            ("[7]", "📡 Packet Tracer",            "[8]", "🔐 Security Audit"),
+            ("[9]", "🧹 Clear Screen",             "[0]", "🚪 Exit (Alhamdulillah)")
         ]
         
-        for i in range(0, len(options), 2):
-            left = f"  {self.C.GOLD}{self.C.BOLD}{options[i][0]}{self.C.END} {self.C.WHITE}{options[i][1]}{self.C.END}"
-            right = f"  {self.C.GOLD}{self.C.BOLD}{options[i+1][0]}{self.C.END} {self.C.WHITE}{options[i+1][1]}{self.C.END}"
-            padding = menu_width - len(f"  {options[i][0]} {options[i][1]}  {options[i+1][0]} {options[i+1][1]}") - 4
-            print(f"{self.C.GOLD}║{left}{' '*padding}{right}{self.C.GOLD}║{self.C.END}")
+        for row in options:
+            left_num, left_text, right_num, right_text = row
+            left = f"  {self.C.GOLD}{self.C.BOLD}{left_num}{self.C.END} {self.C.WHITE}{left_text}{self.C.END}"
+            right = f"  {self.C.GOLD}{self.C.BOLD}{right_num}{self.C.END} {self.C.WHITE}{right_text}{self.C.END}"
+            
+            # Calculate visible lengths (strip ANSI)
+            left_visible = f"  {left_num} {left_text}"
+            right_visible = f"  {right_num} {right_text}"
+            middle_padding = menu_width - len(left_visible) - len(right_visible) - 4
+            
+            print(f"{self.C.GOLD}║{left}{' ' * middle_padding}{right}{self.C.GOLD}║{self.C.END}")
             
         print(f"{self.C.GOLD}╚{'═'*menu_width}╝{self.C.END}")
         
